@@ -1,0 +1,157 @@
+.landing {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100svh;
+}
+
+.landing-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 64px clamp(32px, 7vw, 112px);
+  color: #eadcfb;
+  background: linear-gradient(150deg, #2d0b57, #6a18b5);
+}
+
+.landing-intro h1 {
+  margin: 0 0 16px;
+  color: #fff;
+}
+
+.landing-tagline {
+  max-width: 560px;
+  font-size: 24px;
+  line-height: 135%;
+  color: #fff;
+}
+
+.landing-features {
+  margin: 32px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-features li {
+  position: relative;
+  margin-bottom: 12px;
+  padding-left: 28px;
+}
+
+.landing-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  font-weight: 600;
+  color: #fff;
+}
+
+.landing-soon {
+  max-width: 560px;
+  padding-top: 24px;
+  font-size: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.landing-panel {
+  display: grid;
+  place-items: center;
+  padding: 48px 24px;
+}
+
+.landing-form {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.landing-form h2 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.landing-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.landing-form input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.landing-form input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.landing-error {
+  font-size: 15px;
+  color: var(--danger);
+}
+
+.landing-submit {
+  padding: 12px;
+  font: inherit;
+  font-weight: 500;
+  color: #fff;
+  background: var(--primary);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.landing-submit:hover {
+  background: var(--primary-hover);
+}
+
+.landing-switch {
+  padding: 4px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.landing-switch:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 800px) {
+  .landing {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .landing-intro {
+    padding: 32px 16px;
+  }
+
+  .landing-tagline {
+    font-size: 20px;
+  }
+
+  .landing-features {
+    margin: 20px 0;
+  }
+
+  .landing-soon {
+    padding-top: 16px;
+  }
+
+  .landing-panel {
+    place-items: start center;
+    padding: 32px 16px;
+  }
+}
