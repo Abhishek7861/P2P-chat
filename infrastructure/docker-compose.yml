@@ -1,0 +1,39 @@
+name: p2p-messenger
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: p2p
+      POSTGRES_USER: ${DB_USER:-p2p}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-p2p}
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-p2p} -d p2p"] 
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ../be-p2p
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/p2p
+      DB_USER: ${DB_USER:-p2p}
+      DB_PASSWORD: ${DB_PASSWORD:-p2p}
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-64-char-random-string-change-me-to-a-64-char-rand}
+      CORS_ORIGINS: http://localhost:5173
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  frontend:
+    build:
+      context: ../fe-p2p
+      dockerfile: Dockerfile.dev
+    environment:
+      API_TARGET: http://backend:8080
+    ports: ["5173:5173"]
+    depends_on: [backend]
+
+volumes: 
+  pgdata:
