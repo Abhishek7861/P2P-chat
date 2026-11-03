@@ -1,3 +1,6 @@
+# ${NAME:default} reads environment variable NAME, falling back to the default (for local runs).
+# Docker Compose sets these variables from infrastructure/.env.
+
 server:
   port: 8080
 
@@ -6,6 +9,7 @@ spring:
     name: p2p
   web:
     error:
+      # Show error messages and validation errors in responses; SafeErrorAttributes removes the unsafe parts
       include-message: always
       include-binding-errors: always
   datasource:
@@ -15,18 +19,19 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate      # Flyway owns the schema, Hibernate only checks it
-    open-in-view: false
+    open-in-view: false       # database sessions close when a request's transaction ends, not after the response
   flyway:
-    enabled: true
+    enabled: true             # runs src/main/resources/db/migration/V*.sql in order at startup
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info  # /actuator/health reports whether the app and its database are up
 
 app:
-  cors-origins: ${CORS_ORIGINS:http://localhost:5173}
+  cors-origins: ${CORS_ORIGINS:http://localhost:5173}   # frontend origin(s), comma-separated
   jwt:
+    # Must be at least 32 bytes. The default is for local development only; set JWT_SECRET everywhere else
     secret: ${JWT_SECRET:dev-only-secret-dev-only-secret-dev-only-secret-0000}
-    ttl: PT12H
+    ttl: PT12H                # how long a token lasts (ISO-8601 duration: 12 hours)

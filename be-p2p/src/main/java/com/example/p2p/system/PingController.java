@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Map;
 
+/** Public GET /api/ping, a quick way to check the API is up and reachable from the frontend. */
 @RestController
 @RequestMapping("/api")
 public class PingController {

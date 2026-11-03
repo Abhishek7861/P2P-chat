@@ -100,12 +100,62 @@
   color: var(--danger);
 }
 
+.conn-status {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.conn-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--border);
+  border-radius: 50%;
+}
+
+.conn-open::before {
+  background: #22a559;
+}
+
+.conn-connecting::before,
+.conn-closed::before {
+  background: #e0a100;
+}
+
+.app-banner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 24px;
+  font-size: 15px;
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border-bottom: 1px solid var(--border);
+}
+
 @media (max-width: 500px) {
-  .app-header {
+  .app-header,
+  .app-banner {
     padding: 12px 16px;
   }
 
   .app-user .person-text {
     display: none;
+  }
+
+  .app-brand {
+    font-size: 18px;
+    white-space: nowrap;
+  }
+
+  /* Only the coloured dot; the text stays available to screen readers and as a tooltip */
+  .conn-status {
+    font-size: 0;
   }
 }

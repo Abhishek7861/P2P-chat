@@ -98,6 +98,35 @@
   flex: 1;
 }
 
+.contacts-open {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.contacts-open.is-active {
+  background: var(--accent-bg);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.unread-badge {
+  flex: none;
+  min-width: 20px;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
 .status-dot {
   flex: none;
   width: 10px;
@@ -132,6 +161,11 @@
   }
 
   .contacts-main {
+    display: none;
+  }
+
+  /* On phones an open chat takes the whole screen; its back button returns to the list */
+  .has-chat .contacts-sidebar {
     display: none;
   }
 }

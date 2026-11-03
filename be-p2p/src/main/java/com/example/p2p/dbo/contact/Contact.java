@@ -9,9 +9,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+/**
+ * One row of the contacts table: "owner added contact". The row has no id column of its own;
+ * the (owner, contact) pair is the primary key, so the same pair can't be stored twice.
+ */
 @Entity
 @Table(name = "contacts") @Getter
-@NoArgsConstructor
+@NoArgsConstructor   // JPA needs a no-args constructor to load rows
 public class Contact {
     @EmbeddedId
     private ContactId id;

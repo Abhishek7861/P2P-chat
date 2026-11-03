@@ -34,11 +34,11 @@ export default function LoginPage() {
         <h1>P2P Messenger</h1>
         <p className="landing-tagline">A messenger built to connect people directly, browser to browser.</p>
         <ul className="landing-features">
-          <li>Create an account in seconds</li>
           <li>Find people by name or username</li>
-          <li>Keep your contacts in one place</li>
+          <li>See which contacts are online</li>
+          <li>Chat directly: messages go browser to browser and never pass through the server</li>
         </ul>
-        <p className="landing-soon">Coming soon: peer-to-peer chat, file sharing, and audio and video calls.</p>
+        <p className="landing-soon">Coming soon: file sharing, and audio and video calls.</p>
       </section>
 
       <section className="landing-panel">

@@ -25,9 +25,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!tokenStore.get()) return;
+    // api() already drops the token on a 401. Any other failure (server down, network blip) keeps it,
+    // so a reload once the server is back signs you straight in again.
     api<User>('/users/me')
       .then(setUser)
-      .catch(() => tokenStore.clear())
+      .catch(() => {})
       .finally(() => setReady(true));
   }, []);
 
