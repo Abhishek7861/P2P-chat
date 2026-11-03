@@ -18,12 +18,13 @@ public class WebSocketConfig implements WebSocketConfigurer {
     private final SignalingHandler handler;
     private final JwtHandshakeInterceptor auth;
 
+    // Patterns, so a wildcard such as https://*.trycloudflare.com can be allowed
     @Value("${app.cors-origins}")
     private String[] origins;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(handler, "/ws/signal").addInterceptors(auth).setAllowedOrigins(origins);
+        registry.addHandler(handler, "/ws/signal").addInterceptors(auth).setAllowedOriginPatterns(origins);
     }
 
     @Bean

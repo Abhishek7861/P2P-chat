@@ -51,10 +51,14 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /** Lets the frontend origins in app.cors-origins call the API from the browser. */
+    /**
+     * Lets the frontend origins in app.cors-origins call the API from the browser. They're patterns, so
+     * https://*.trycloudflare.com covers every quick-tunnel address. Needed even behind the Vite proxy:
+     * the proxy changes the Host but not the Origin, so Spring sees a cross-origin request.
+     */
     private CorsConfigurationSource cors(List<String> origins) {
         var cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(origins);
+        cfg.setAllowedOriginPatterns(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         var src = new UrlBasedCorsConfigurationSource();
