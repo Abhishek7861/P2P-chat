@@ -28,5 +28,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const res = await fetch(`/api${path}`, { ...init, headers });
     if (res.status === 401) tokenStore.clear();
     if (!res.ok) throw new Error(await errorMessage(res));
-    return res.status === 204 ? (undefined as T) : res.json();
+    // Some successful responses have no body (204, or a 201 with nothing to return)
+    const body = await res.text();
+    return (body ? JSON.parse(body) : undefined) as T;
 }

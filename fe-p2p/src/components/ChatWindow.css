@@ -184,6 +184,16 @@
   color: var(--tick);
 }
 
+.tick-failed {
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.bubble-locked {
+  font-style: italic;
+  opacity: 0.7;
+}
+
 .bubble {
   padding: 10px 14px;
   font-size: 15px;

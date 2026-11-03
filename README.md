@@ -1,6 +1,8 @@
 # PEER Messenger
 
-A peer-to-peer messaging app, in development. You can create an account, add contacts, see who is online, chat, and send files up to 500 MB. Messages and files go directly between browsers over WebRTC; the Spring Boot backend handles accounts, contacts, presence and connection setup, and never sees message content. Audio and video calls are not built yet.
+A peer-to-peer messaging app, in development. You can create an account, add contacts, see who is online, chat, send files up to 500 MB, and make audio calls. Messages, files and calls go directly between browsers over WebRTC; the Spring Boot backend handles accounts, contacts, presence, connection setup and the call log. Video calls are not built yet.
+
+Messages are also kept on the server for 24 hours, end-to-end encrypted, so they survive a refresh and reach contacts who were offline. Each browser holds its own private key; the server stores only ciphertext and can see who wrote to whom and when, but not what. A key belongs to one browser, so history encrypted for one browser can't be read on another.
 
 ## Tech stack
 
