@@ -1,21 +1,11 @@
 import type { User } from '../services/api';
+import Avatar from './Avatar';
 
-function initials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => Array.from(word)[0])
-    .join('')
-    .toUpperCase();
-}
-
-export default function Person({ user }: { user: User }) {
+// Avatar plus display name and @username, used in search results.
+export default function Person({ user, online }: { user: User; online?: boolean }) {
   return (
     <>
-      <span className="avatar" aria-hidden="true">
-        {initials(user.displayName)}
-      </span>
+      <Avatar user={user} online={online} />
       <span className="person-text">
         <strong>{user.displayName}</strong>
         <span>@{user.username}</span>

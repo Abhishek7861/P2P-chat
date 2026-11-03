@@ -9,6 +9,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    // Vite rejects unknown Host headers; this lets a Cloudflare quick tunnel (random *.trycloudflare.com name) through
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': { target, changeOrigin: true },
       '/ws': { target, ws: true, changeOrigin: true },

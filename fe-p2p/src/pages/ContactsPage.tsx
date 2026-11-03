@@ -1,25 +1,62 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
+import Avatar from '../components/Avatar';
 import Person from '../components/Person';
+import { FileIcon, PlusIcon, SearchIcon } from '../components/Icons';
 import { api } from '../services/api';
 import type { User } from '../services/api';
+import type { SignalingStatus } from '../services/signaling';
+import { listTime } from '../utils/time';
 import './ContactsPage.css';
 
-type Props = { onOpenChat?: (u: User) => void; online?: Set<string> };
+export type LastActivity = { at: number; text: string; mine: boolean; file?: boolean };
 
-export default function ContactsPage({ onOpenChat, online }: Props) {
+const STATUS_TEXT: Record<SignalingStatus, string> = {
+  connecting: 'Connecting…',
+  open: 'Connected',
+  closed: 'Reconnecting…',
+  replaced: 'Paused',
+};
+
+type Props = {
+  onOpenChat: (u: User) => void;
+  online: Set<string>;
+  status: SignalingStatus;
+  activeId?: string;
+  unread?: Record<string, number>;
+  last?: Record<string, LastActivity>;
+  notice?: ReactNode;
+  /** Called with the contact list whenever it loads, so the app can show names for calls. */
+  onContacts?: (contacts: User[]) => void;
+};
+
+// The chat list: find people and add them, see who's online, and pick a contact to chat with.
+export default function ContactsPage({
+  onOpenChat,
+  online,
+  status,
+  activeId,
+  unread = {},
+  last = {},
+  notice,
+  onContacts,
+}: Props) {
   const [contacts, setContacts] = useState<User[]>([]);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<User[] | null>(null);
   const [error, setError] = useState('');
+  const searchBox = useRef<HTMLInputElement>(null);
 
   const fail = (err: unknown) => setError((err as Error).message);
   const load = useCallback(
     () =>
       api<User[]>('/contacts')
-        .then(setContacts)
+        .then((list) => {
+          setContacts(list);
+          onContacts?.(list);
+        })
         .catch((err: Error) => setError(err.message)),
-    [],
+    [onContacts],
   );
 
   useEffect(() => {
@@ -29,6 +66,7 @@ export default function ContactsPage({ onOpenChat, online }: Props) {
   const clearSearch = () => {
     setResults(null);
     setQ('');
+    setError('');
   };
 
   const search = async (e: FormEvent) => {
@@ -56,84 +94,138 @@ export default function ContactsPage({ onOpenChat, online }: Props) {
     }
   };
 
+  // Most recent conversation first, then alphabetical
+  const sorted = [...contacts].sort(
+    (a, b) => (last[b.id]?.at ?? 0) - (last[a.id]?.at ?? 0) || a.displayName.localeCompare(b.displayName),
+  );
+  const onlineNow = sorted.filter((c) => online.has(c.id));
+
   return (
-    <div className="contacts-layout">
-      <aside className="contacts-sidebar">
-        <form className="contacts-search" onSubmit={search}>
-          <input
-            aria-label="Find people"
-            placeholder="Find people"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <button className="btn btn-primary" type="submit">
-            Search
-          </button>
-        </form>
-        {error && (
-          <p className="error-text contacts-error" role="alert">
-            {error}
-          </p>
-        )}
+    <aside className="sidebar">
+      <div className="sidebar-head">
+        <h1>Chats</h1>
+        <span className={`conn-chip conn-${status}`} role="status">
+          {STATUS_TEXT[status]}
+        </span>
+        <button
+          className="add-btn"
+          aria-label="Find people to add"
+          title="Find people to add"
+          onClick={() => searchBox.current?.focus()}
+        >
+          <PlusIcon size={18} />
+        </button>
+      </div>
 
-        {results && (
-          <section className="contacts-section">
-            <div className="contacts-heading">
-              <h2>Search results</h2>
-              <button className="contacts-clear" onClick={clearSearch}>
-                Clear
-              </button>
-            </div>
-            {results.length === 0 && <p className="contacts-empty">No people found.</p>}
-            <ul className="contacts-list">
-              {results.map((u) => {
-                const added = contacts.some((c) => c.id === u.id);
-                return (
-                  <li key={u.id} className="contacts-row">
-                    <Person user={u} />
-                    <button className="btn" disabled={added} onClick={() => add(u)}>
-                      {added ? 'Added' : 'Add'}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
+      {notice}
 
-        <section className="contacts-section">
-          <div className="contacts-heading">
-            <h2>Contacts</h2>
-            <span>{contacts.length}</span>
+      <form className="search" onSubmit={search} role="search">
+        <input
+          ref={searchBox}
+          aria-label="Search for people by name or username"
+          placeholder="Search for people to add"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <button className="search-btn" type="submit" aria-label="Search">
+          <SearchIcon size={18} />
+        </button>
+      </form>
+      {error && (
+        <p className="error-text sidebar-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      {results && (
+        <section className="sidebar-section">
+          <div className="section-head">
+            <h2>Search results</h2>
+            <button className="link-btn" onClick={clearSearch}>
+              Clear
+            </button>
           </div>
-          {contacts.length === 0 && (
-            <p className="contacts-empty">No contacts yet. Search above to add someone.</p>
-          )}
-          <ul className="contacts-list">
-            {contacts.map((c) => (
-              <li key={c.id} className="contacts-row">
-                <Person user={c} />
-                {online && (
-                  <span
-                    className={online.has(c.id) ? 'status-dot status-online' : 'status-dot'}
-                    title={online.has(c.id) ? 'Online' : 'Offline'}
-                  />
-                )}
-                {onOpenChat && (
-                  <button className="btn" onClick={() => onOpenChat(c)}>
-                    Chat
+          {results.length === 0 && <p className="sidebar-empty">No people found.</p>}
+          <ul className="chat-list">
+            {results.map((u) => {
+              const added = contacts.some((c) => c.id === u.id);
+              return (
+                <li key={u.id} className="chat-card">
+                  <Person user={u} />
+                  <button className={added ? 'btn' : 'btn btn-primary'} disabled={added} onClick={() => add(u)}>
+                    {added ? 'Added' : 'Add'}
                   </button>
-                )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {onlineNow.length > 0 && (
+        <section className="sidebar-section">
+          <div className="section-head">
+            <h2>Online now</h2>
+          </div>
+          <ul className="online-row">
+            {onlineNow.map((c) => (
+              <li key={c.id}>
+                <button className="online-person" onClick={() => onOpenChat(c)} aria-label={`Chat with ${c.displayName}`}>
+                  <Avatar user={c} size={52} online />
+                  <span>{c.displayName.split(/\s+/)[0]}</span>
+                </button>
               </li>
             ))}
           </ul>
         </section>
-      </aside>
+      )}
 
-      <main className="contacts-main">
-        <h2>Your conversations will appear here</h2>
-        <p>Peer-to-peer chat is coming soon. For now, find people and build your contact list.</p>
-      </main>
-    </div>
+      <section className="sidebar-section">
+        <div className="section-head">
+          <h2>All chats</h2>
+          <span className="count">{contacts.length}</span>
+        </div>
+        {contacts.length === 0 && (
+          <p className="sidebar-empty">No contacts yet. Use the search above to find people and add them.</p>
+        )}
+        <ul className="chat-list">
+          {sorted.map((c) => {
+            const count = unread[c.id] ?? 0;
+            const isOnline = online.has(c.id);
+            const a = last[c.id];
+            const label = `${c.displayName}, ${isOnline ? 'online' : 'offline'}${count ? `, ${count} unread` : ''}`;
+            return (
+              <li key={c.id}>
+                <button
+                  className={c.id === activeId ? 'chat-card chat-open is-active' : 'chat-card chat-open'}
+                  aria-label={label}
+                  aria-current={c.id === activeId ? 'true' : undefined}
+                  onClick={() => onOpenChat(c)}
+                >
+                  <Avatar user={c} online={isOnline} />
+                  <span className="chat-text">
+                    <strong>{c.displayName}</strong>
+                    <span className="chat-preview">
+                      {a ? (
+                        <>
+                          {a.file && <FileIcon size={14} />}
+                          {a.mine ? `You: ${a.text}` : a.text}
+                        </>
+                      ) : (
+                        `@${c.username}`
+                      )}
+                    </span>
+                  </span>
+                  <span className="chat-side">
+                    {a && <span className="chat-time">{listTime(a.at)}</span>}
+                    {count > 0 && <span className="unread-badge">{count > 99 ? '99+' : count}</span>}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </aside>
   );
 }

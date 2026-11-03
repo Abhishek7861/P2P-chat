@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import Logo from '../components/Logo';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -31,19 +32,26 @@ export default function LoginPage() {
   return (
     <main className="landing">
       <section className="landing-intro">
-        <h1>P2P Messenger</h1>
+        <div className="landing-brand">
+          <Logo size={48} />
+          <h1>PEER Messenger</h1>
+        </div>
         <p className="landing-tagline">A messenger built to connect people directly, browser to browser.</p>
         <ul className="landing-features">
-          <li>Create an account in seconds</li>
           <li>Find people by name or username</li>
-          <li>Keep your contacts in one place</li>
+          <li>See which contacts are online</li>
+          <li>Chat directly: messages go browser to browser and never pass through the server</li>
+          <li>Send files up to 500 MB the same way, checked for damage on arrival</li>
         </ul>
-        <p className="landing-soon">Coming soon: peer-to-peer chat, file sharing, and audio and video calls.</p>
+        <p className="landing-soon">Coming soon: audio and video calls.</p>
       </section>
 
       <section className="landing-panel">
         <form className="landing-form" onSubmit={submit}>
-          <h2>{mode === 'login' ? 'Log in' : 'Create account'}</h2>
+          <h2>{mode === 'login' ? 'Welcome back' : 'Create your account'}</h2>
+          <p className="landing-sub">
+            {mode === 'login' ? 'Log in to pick up your conversations.' : 'It only takes a few seconds.'}
+          </p>
           <label>
             Username
             <input autoComplete="username" value={form.username} onChange={set('username')} />

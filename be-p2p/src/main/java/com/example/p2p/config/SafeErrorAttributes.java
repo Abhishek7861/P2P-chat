@@ -15,6 +15,9 @@ import java.util.Map;
  * Keeps internal details out of error responses; they stay in the server log.
  * 5xx responses lose their message (it can contain SQL). Validation errors are cut down to
  * the field and its message, because the defaults echo rejected values such as passwords.
+ * <p>
+ * Spring Boot uses this bean to build the JSON body of every error response
+ * ({@code timestamp}, {@code status}, {@code error}, {@code message}, {@code errors}, {@code path}).
  */
 @Component
 public class SafeErrorAttributes extends DefaultErrorAttributes {
@@ -31,6 +34,7 @@ public class SafeErrorAttributes extends DefaultErrorAttributes {
         return attributes;
     }
 
+    /** Turns one validation error into {@code {field, defaultMessage}}, e.g. {@code {"password", "size must be between 8 and 72"}}. */
     private static Map<String, Object> summarize(Object error) {
         Map<String, Object> summary = new LinkedHashMap<>();
         if (error instanceof FieldError fieldError) summary.put("field", fieldError.getField());
