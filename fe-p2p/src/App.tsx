@@ -20,7 +20,7 @@ const STATUS_TEXT: Record<SignalingStatus, string> = {
 function Home() {
   const { user, logout } = useAuth();
   const { client, online, status } = useSignaling();
-  const { conversations } = usePeers();
+  const { conversations, transfers } = usePeers();
   const [active, setActive] = useState<User | null>(null);
   // How many of each contact's messages I've seen; the rest show as an unread badge
   const [seen, setSeen] = useState<Record<string, number>>({});
@@ -34,9 +34,13 @@ function Home() {
     });
   }, [client]);
 
-  const received = (id: string) => (conversations[id] ?? []).filter((m) => m.from === 'them').length;
+  // Everything a contact has sent me: messages plus files they offered
+  const incomingFiles = Object.values(transfers).filter((t) => t.direction === 'in');
+  const received = (id: string) =>
+    (conversations[id] ?? []).filter((m) => m.from === 'them').length +
+    incomingFiles.filter((t) => t.peerId === id).length;
   const unread: Record<string, number> = {};
-  for (const id of Object.keys(conversations)) {
+  for (const id of new Set([...Object.keys(conversations), ...incomingFiles.map((t) => t.peerId)])) {
     if (id !== active?.id) unread[id] = Math.max(0, received(id) - (seen[id] ?? 0));
   }
 

@@ -1,21 +1,38 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { PeerManager } from '../webrtc/PeerManager';
 import { MAX_TEXT } from '../webrtc/chatProtocol';
 import type { ChatFrame, ChatMessage } from '../webrtc/chatProtocol';
+import { FileTransfers, fileProblem } from '../webrtc/fileTransfer';
+import type { FileFrame, Transfer } from '../webrtc/fileTransfer';
 import { DEFAULT_ICE_SERVERS } from '../webrtc/config';
 import { useSignaling } from './useSignaling';
 import { useAuth } from './useAuth';
 
 export type ConnState = RTCPeerConnectionState | 'idle';
 
+// Everything that travels on the chat channel: chat messages and file-transfer control frames
+type Frame = ChatFrame | FileFrame;
+
+type FileActions = {
+  accept: (id: string) => void;
+  reject: (id: string) => void;
+  pause: (id: string) => void;
+  resume: (id: string) => void;
+  cancel: (id: string) => void;
+};
+
 const isActive = (s?: ConnState) => s === 'new' || s === 'connecting' || s === 'connected' || s === 'disconnected';
 
 type PeerCtx = {
   conversations: Record<string, ChatMessage[]>;
   states: Record<string, ConnState>;
+  transfers: Record<string, Transfer>;
   connect: (peerId: string) => void;
   sendText: (peerId: string, text: string) => void;
+  /** Rejects with a readable message if the file can't be sent (empty or too big). */
+  sendFile: (peerId: string, file: File) => Promise<void>;
+  files: FileActions;
   hangUp: (peerId: string) => void;
 };
 
@@ -24,17 +41,20 @@ const Ctx = createContext<PeerCtx>(null!);
 // eslint-disable-next-line react-refresh/only-export-components
 export const usePeers = () => useContext(Ctx);
 
-// Owns the PeerManager, the open chat channels and every conversation. Messages live only in memory.
+// Owns the PeerManager, the open chat channels, every conversation and every file transfer.
+// Messages and received files live only in memory.
 export function PeerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { client } = useSignaling();
   const [conversations, setConversations] = useState<Record<string, ChatMessage[]>>({});
   const [states, setStates] = useState<Record<string, ConnState>>({});
+  const [transfers, setTransfers] = useState<Record<string, Transfer>>({});
   // Created in an effect (not useState) so StrictMode's double mount disposes the first manager
   // instead of leaving a second subscriber that would answer every offer twice.
   const manager = useRef<PeerManager | null>(null);
+  const files = useRef<FileTransfers | null>(null);
   const channels = useRef(new Map<string, RTCDataChannel>());
-  const outbox = useRef(new Map<string, ChatFrame[]>());
+  const outbox = useRef(new Map<string, Frame[]>());
 
   const addMsg = useCallback(
     (peerId: string, m: ChatMessage) => setConversations((c) => ({ ...c, [peerId]: [...(c[peerId] ?? []), m] })),
@@ -63,9 +83,31 @@ export function PeerProvider({ children }: { children: ReactNode }) {
     [patchMsg],
   );
 
+  const connect = useCallback((peerId: string) => {
+    const m = manager.current;
+    if (!m) return;
+    const peer = m.get(peerId);
+    if (!peer.chat && !channels.current.has(peerId)) peer.openChat();
+    setStates((x) => (isActive(x[peerId]) ? x : { ...x, [peerId]: 'new' }));
+  }, []);
+
+  // Queues a frame and sends it now if the channel is open, otherwise connects first (it's flushed on open)
+  const enqueue = useCallback(
+    (peerId: string, f: Frame) => {
+      outbox.current.set(peerId, [...(outbox.current.get(peerId) ?? []), f]);
+      if (channels.current.get(peerId)?.readyState === 'open') flush(peerId);
+      else connect(peerId);
+    },
+    [flush, connect],
+  );
+
   const attach = useCallback(
     (peerId: string, ch: RTCDataChannel) => {
-      ch.binaryType = 'arraybuffer'; // Phase 5 sends binary chunks on another channel
+      ch.binaryType = 'arraybuffer';
+      if (ch.label.startsWith('file:')) {
+        files.current?.handleChannel(peerId, ch);
+        return;
+      }
       if (ch.label !== 'chat') return;
       channels.current.set(peerId, ch);
       ch.onopen = () => flush(peerId);
@@ -74,13 +116,16 @@ export function PeerProvider({ children }: { children: ReactNode }) {
       };
       ch.onmessage = (e) => {
         if (typeof e.data !== 'string') return;
-        let f: ChatFrame;
+        let f: Frame;
         try {
           f = JSON.parse(e.data);
         } catch {
           return;
         }
-        if (f.t === 'msg' && typeof f.id === 'string' && typeof f.text === 'string') {
+        if (typeof f?.t !== 'string') return;
+        if (f.t.startsWith('file-')) {
+          files.current?.handleFrame(peerId, f as FileFrame);
+        } else if (f.t === 'msg' && typeof f.id === 'string' && typeof f.text === 'string') {
           const sentAt = typeof f.sentAt === 'number' ? f.sentAt : Date.now();
           addMsg(peerId, { id: f.id, from: 'them', text: f.text.slice(0, MAX_TEXT), sentAt, status: 'received' });
           ch.send(JSON.stringify({ t: 'ack', id: f.id, receivedAt: Date.now() } satisfies ChatFrame));
@@ -94,33 +139,40 @@ export function PeerProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
+    const ft = new FileTransfers({
+      sendFrame: enqueue,
+      // Extra channels on an established connection open almost instantly, with no new negotiation
+      openChannel: (peerId, label) => {
+        const pc = m.get(peerId).pc;
+        return { channel: pc.createDataChannel(label, { ordered: true }), maxMessageSize: pc.sctp?.maxMessageSize };
+      },
+      onChange: (t) => setTransfers((x) => ({ ...x, [t.id]: t })),
+    });
     const m = new PeerManager(
       user.id,
       client,
       () => DEFAULT_ICE_SERVERS,
       (peerId) => ({
         onState: (s) => {
-          // The channel belongs to the connection that just ended, so the next connect() opens a new one
-          if (s === 'failed' || s === 'closed') channels.current.delete(peerId);
+          if (s === 'failed' || s === 'closed') {
+            // The channel belongs to the connection that just ended, so the next connect() opens a new one
+            channels.current.delete(peerId);
+            ft.peerGone(peerId);
+          }
           setStates((x) => ({ ...x, [peerId]: s }));
         },
         onChannel: (ch) => attach(peerId, ch),
       }),
     );
     manager.current = m;
+    files.current = ft;
     return () => {
       m.dispose();
+      ft.dispose();
       if (manager.current === m) manager.current = null;
+      if (files.current === ft) files.current = null;
     };
-  }, [client, user, attach]);
-
-  const connect = useCallback((peerId: string) => {
-    const m = manager.current;
-    if (!m) return;
-    const peer = m.get(peerId);
-    if (!peer.chat && !channels.current.has(peerId)) peer.openChat();
-    setStates((x) => (isActive(x[peerId]) ? x : { ...x, [peerId]: 'new' }));
-  }, []);
+  }, [client, user, attach, enqueue]);
 
   const sendText = useCallback(
     (peerId: string, raw: string) => {
@@ -128,11 +180,31 @@ export function PeerProvider({ children }: { children: ReactNode }) {
       if (!text) return;
       const frame: ChatFrame = { t: 'msg', id: crypto.randomUUID(), text, sentAt: Date.now() };
       addMsg(peerId, { id: frame.id, from: 'me', text, sentAt: frame.sentAt, status: 'queued' });
-      outbox.current.set(peerId, [...(outbox.current.get(peerId) ?? []), frame]);
-      if (channels.current.get(peerId)?.readyState === 'open') flush(peerId);
-      else connect(peerId);
+      enqueue(peerId, frame);
     },
-    [addMsg, flush, connect],
+    [addMsg, enqueue],
+  );
+
+  const sendFile = useCallback(
+    async (peerId: string, file: File) => {
+      if (!files.current) return;
+      const problem = fileProblem(file);
+      if (problem) throw new Error(problem);
+      connect(peerId); // start connecting while the file is hashed; the offer waits in the outbox
+      await files.current.offer(peerId, file);
+    },
+    [connect],
+  );
+
+  const fileActions = useMemo<FileActions>(
+    () => ({
+      accept: (id) => files.current?.accept(id),
+      reject: (id) => files.current?.reject(id),
+      pause: (id) => files.current?.pause(id),
+      resume: (id) => files.current?.resume(id),
+      cancel: (id) => files.current?.cancel(id),
+    }),
+    [],
   );
 
   const hangUp = useCallback((peerId: string) => {
@@ -141,5 +213,11 @@ export function PeerProvider({ children }: { children: ReactNode }) {
     setStates((x) => ({ ...x, [peerId]: 'idle' }));
   }, []);
 
-  return <Ctx.Provider value={{ conversations, states, connect, sendText, hangUp }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider
+      value={{ conversations, states, transfers, connect, sendText, sendFile, files: fileActions, hangUp }}
+    >
+      {children}
+    </Ctx.Provider>
+  );
 }
