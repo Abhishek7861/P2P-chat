@@ -43,8 +43,9 @@ function Home() {
 
   // Everything a contact has sent me: messages plus files they offered
   const incomingFiles = Object.values(transfers).filter((t) => t.direction === 'in');
+  // (history loaded from the server that I'd already received before counts as read)
   const received = (id: string) =>
-    (conversations[id] ?? []).filter((m) => m.from === 'them').length +
+    (conversations[id] ?? []).filter((m) => m.from === 'them' && m.isNew !== false).length +
     incomingFiles.filter((t) => t.peerId === id).length;
   const unread: Record<string, number> = {};
   for (const id of new Set([...Object.keys(conversations), ...incomingFiles.map((t) => t.peerId)])) {
@@ -149,7 +150,10 @@ function Home() {
         <main className="welcome">
           <Logo size={72} />
           <h2>Welcome to PEER Messenger</h2>
-          <p>Pick a chat to start. Messages and files travel directly between browsers; the server only helps you connect.</p>
+          <p>
+            Pick a chat to start. Messages go directly between browsers, with an end-to-end encrypted copy kept for
+            24 hours so offline contacts still get them. Files and calls never touch the server.
+          </p>
         </main>
       )}
     </div>

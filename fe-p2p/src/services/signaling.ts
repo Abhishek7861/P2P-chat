@@ -8,7 +8,10 @@ export type ServerMsg =
   | { type: 'presence'; userId: string; online: boolean }
   | { type: 'signal'; from: string; payload: SignalPayload }
   | { type: 'error'; code: string; to?: string }
-  | { type: 'pong' };
+  | { type: 'pong' }
+  // From the 24-hour message store: something new is waiting / my stored messages were delivered
+  | { type: 'inbox' }
+  | { type: 'receipt'; ids: string[] };
 
 // 'replaced': this user connected from another tab, and the server closed this socket with code 4000.
 export type SignalingStatus = 'connecting' | 'open' | 'closed' | 'replaced';

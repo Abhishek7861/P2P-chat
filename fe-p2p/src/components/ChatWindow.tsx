@@ -37,10 +37,26 @@ function Tick({ status }: { status: ChatMessage['status'] }) {
         <ClockIcon />
       </span>
     );
+  if (status === 'stored')
+    return (
+      <span
+        className="tick"
+        title="Saved encrypted on the server. They'll get it when they're online."
+        aria-label="Saved for delivery"
+      >
+        <CheckIcon />
+      </span>
+    );
   if (status === 'sent')
     return (
       <span className="tick" title="Sent" aria-label="Sent">
         <CheckIcon />
+      </span>
+    );
+  if (status === 'failed')
+    return (
+      <span className="tick tick-failed" title="Not sent. They're offline and it couldn't be saved." aria-label="Not sent">
+        Not sent
       </span>
     );
   if (status === 'delivered')
@@ -65,7 +81,8 @@ export default function ChatWindow({ peer, online, onBack }: Props) {
   const messages = conversations[peer.id] ?? [];
   const state = states[peer.id] ?? 'idle';
   const connecting = state === 'new' || state === 'connecting';
-  const canSend = online || state === 'connected';
+  // Text can always be sent: offline contacts get it from the 24-hour store. Files need a live connection.
+  const canSendFile = online || state === 'connected';
 
   // Messages and files in one timeline, oldest first
   const items: Item[] = [
@@ -81,7 +98,6 @@ export default function ChatWindow({ peer, online, onBack }: Props) {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!canSend) return;
     sendText(peer.id, draft);
     setDraft('');
   };
@@ -132,10 +148,11 @@ export default function ChatWindow({ peer, online, onBack }: Props) {
             <Avatar user={peer} size={72} />
             <h2>{peer.displayName}</h2>
             <p>
-              Messages and files go straight from your browser to {peer.displayName}'s. The server only helps you
-              connect and never sees them.
+              Messages go straight to {peer.displayName}'s browser when you're both online. An end-to-end encrypted
+              copy is kept on the server for 24 hours, which the server can't read, so offline messages still arrive.
+              Files never touch the server.
             </p>
-            <p>{online ? 'Say hello below.' : `${peer.displayName} is offline. You can chat once they're online.`}</p>
+            <p>{online ? 'Say hello below.' : `${peer.displayName} is offline, but they'll get your messages when they're back.`}</p>
           </div>
         )}
         {items.map((item, i) => {
@@ -173,7 +190,7 @@ export default function ChatWindow({ peer, online, onBack }: Props) {
                     )}
                   </div>
                   {item.kind === 'msg' ? (
-                    <div className="bubble">{item.m.text}</div>
+                    <div className={item.m.locked ? 'bubble bubble-locked' : 'bubble'}>{item.m.text}</div>
                   ) : (
                     <TransferCard t={item.t} peerName={peer.displayName} />
                   )}
@@ -204,23 +221,22 @@ export default function ChatWindow({ peer, online, onBack }: Props) {
           <input
             className="composer-input"
             aria-label={`Message ${peer.displayName}`}
-            placeholder={canSend ? 'Type your message' : `${peer.displayName} is offline`}
+            placeholder={online || state === 'connected' ? 'Type your message' : "Type a message. They'll get it when they're back"}
             maxLength={MAX_TEXT}
             value={draft}
-            disabled={!canSend}
             onChange={(e) => setDraft(e.target.value)}
           />
           <button
             className="icon-btn"
             type="button"
             aria-label="Send a file"
-            title="Send a file (up to 500 MB)"
-            disabled={!canSend}
+            title={canSendFile ? 'Send a file (up to 500 MB)' : 'Files need them to be online'}
+            disabled={!canSendFile}
             onClick={() => picker.current?.click()}
           >
             <FolderIcon />
           </button>
-          <button className="send-btn" type="submit" aria-label="Send" disabled={!canSend || !draft.trim()}>
+          <button className="send-btn" type="submit" aria-label="Send" disabled={!draft.trim()}>
             <SendIcon size={18} />
           </button>
         </div>

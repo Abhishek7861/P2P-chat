@@ -40,7 +40,7 @@ export default function LoginPage() {
         <ul className="landing-features">
           <li>Find people by name or username</li>
           <li>See which contacts are online</li>
-          <li>Chat directly: messages go browser to browser and never pass through the server</li>
+          <li>Chat directly, browser to browser, with end-to-end encrypted delivery to contacts who are offline</li>
           <li>Send files up to 500 MB the same way, checked for damage on arrival</li>
         </ul>
         <p className="landing-soon">Coming soon: audio and video calls.</p>
