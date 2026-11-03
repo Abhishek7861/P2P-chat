@@ -1,6 +1,6 @@
-# P2P Messenger
+# PEER Messenger
 
-A peer-to-peer messaging app, in early development. So far it is a working scaffold: a React frontend calls a Spring Boot backend backed by PostgreSQL. Messaging features are not built yet.
+A peer-to-peer messaging app, in development. You can create an account, add contacts, see who is online, chat, and send files up to 500 MB. Messages and files go directly between browsers over WebRTC; the Spring Boot backend handles accounts, contacts, presence and connection setup, and never sees message content. Audio and video calls are not built yet.
 
 ## Tech stack
 
@@ -32,7 +32,7 @@ Then open:
 
 | URL | What it shows |
 | --- | --- |
-| http://localhost:5173 | Frontend, which displays the API status |
+| http://localhost:5173 | The app |
 | http://localhost:8080/api/ping | Backend ping endpoint |
 | http://localhost:8080/actuator/health | Backend health check |
 

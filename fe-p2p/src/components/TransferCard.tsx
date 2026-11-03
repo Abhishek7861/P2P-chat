@@ -1,5 +1,6 @@
 import { usePeers } from '../hooks/usePeers';
 import type { Transfer, TransferStatus } from '../webrtc/fileTransfer';
+import { DownloadIcon, FileIcon } from './Icons';
 
 const ACTIVE: TransferStatus[] = ['hashing', 'offered', 'waiting', 'transferring', 'paused', 'interrupted'];
 const SHOW_PROGRESS: TransferStatus[] = ['waiting', 'transferring', 'paused', 'verifying', 'interrupted'];
@@ -44,68 +45,65 @@ export default function TransferCard({ t, peerName }: { t: Transfer; peerName: s
   const { files } = usePeers();
   const incoming = t.direction === 'in';
   const pct = t.size ? Math.round((t.bytes / t.size) * 100) : 0;
+  const saved = t.status === 'done' && t.url;
 
   return (
-    <div className={incoming ? 'msg' : 'msg msg-me'}>
-      <div className={`file-card file-${t.status}`}>
-        <div className="file-head">
-          <span className="file-icon" aria-hidden="true">
-            {incoming ? '↓' : '↑'}
-          </span>
-          <div className="file-text">
-            <strong title={t.name}>{t.name}</strong>
-            <span>
-              {formatBytes(t.size)} · {statusText(t, peerName)}
-            </span>
-          </div>
+    <div className={`file-card file-${t.status}${incoming ? '' : ' file-out'}`}>
+      <div className="file-head">
+        <span className="file-icon" aria-hidden="true">
+          <FileIcon />
+        </span>
+        <div className="file-text">
+          <strong title={t.name}>{t.name}</strong>
+          <span>{formatBytes(t.size)}</span>
         </div>
-
-        {SHOW_PROGRESS.includes(t.status) && (
-          <progress className="file-progress" value={t.bytes} max={t.size} aria-label={`${t.name}: ${pct}%`} />
+        {saved && (
+          // download= keeps only the file name, so a name like ../../x can't escape the downloads folder
+          <a className="file-save" href={t.url} download={t.name} aria-label={`Save ${t.name}`} title="Save">
+            <DownloadIcon size={18} />
+          </a>
         )}
+      </div>
 
-        {t.status === 'done' && t.url && t.mime.startsWith('image/') && (
-          <img className="file-preview" src={t.url} alt={t.name} />
-        )}
+      <p className="file-status">{statusText(t, peerName)}</p>
 
-        <div className="file-actions">
-          {incoming && t.status === 'offered' && (
-            <>
-              <button className="btn btn-primary" onClick={() => files.accept(t.id)}>
-                Accept
-              </button>
-              <button className="btn" onClick={() => files.reject(t.id)}>
-                Decline
-              </button>
-            </>
-          )}
-          {incoming && t.status === 'interrupted' && (
+      {SHOW_PROGRESS.includes(t.status) && (
+        <progress className="file-progress" value={t.bytes} max={t.size} aria-label={`${t.name}: ${pct}%`} />
+      )}
+
+      {saved && t.mime.startsWith('image/') && <img className="file-preview" src={t.url} alt={t.name} />}
+
+      <div className="file-actions">
+        {incoming && t.status === 'offered' && (
+          <>
             <button className="btn btn-primary" onClick={() => files.accept(t.id)}>
-              Resume
+              Accept
             </button>
-          )}
-          {t.status === 'transferring' && (
-            <button className="btn" onClick={() => files.pause(t.id)}>
-              Pause
+            <button className="btn" onClick={() => files.reject(t.id)}>
+              Decline
             </button>
-          )}
-          {t.status === 'paused' && (
-            <button className="btn" onClick={() => files.resume(t.id)}>
-              Resume
-            </button>
-          )}
-          {ACTIVE.includes(t.status) && !(incoming && t.status === 'offered') && (
-            <button className="btn" onClick={() => files.cancel(t.id)}>
-              Cancel
-            </button>
-          )}
-          {t.status === 'done' && t.url && (
-            // download= keeps only the file name, so a name like ../../x can't escape the downloads folder
-            <a className="btn btn-primary" href={t.url} download={t.name}>
-              Save
-            </a>
-          )}
-        </div>
+          </>
+        )}
+        {incoming && t.status === 'interrupted' && (
+          <button className="btn btn-primary" onClick={() => files.accept(t.id)}>
+            Resume
+          </button>
+        )}
+        {t.status === 'transferring' && (
+          <button className="btn" onClick={() => files.pause(t.id)}>
+            Pause
+          </button>
+        )}
+        {t.status === 'paused' && (
+          <button className="btn" onClick={() => files.resume(t.id)}>
+            Resume
+          </button>
+        )}
+        {ACTIVE.includes(t.status) && !(incoming && t.status === 'offered') && (
+          <button className="btn" onClick={() => files.cancel(t.id)}>
+            Cancel
+          </button>
+        )}
       </div>
     </div>
   );

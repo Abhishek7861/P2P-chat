@@ -3,6 +3,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100svh;
+  background: var(--bg);
 }
 
 .landing-intro {
@@ -10,23 +11,43 @@
   flex-direction: column;
   justify-content: center;
   padding: 64px clamp(32px, 7vw, 112px);
-  color: #eadcfb;
-  background: linear-gradient(150deg, #2d0b57, #6a18b5);
+  color: rgba(255, 255, 255, 0.85);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(61, 139, 255, 0.45), transparent 45%),
+    linear-gradient(150deg, #4a1fd0, #6e3ff3);
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* The logo needs a light backing to read on the purple panel */
+.landing-brand svg {
+  padding: 8px;
+  background: #fff;
+  border-radius: 14px;
 }
 
 .landing-intro h1 {
-  margin: 0 0 16px;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: #fff;
 }
 
 .landing-tagline {
-  max-width: 560px;
-  font-size: 24px;
-  line-height: 135%;
+  max-width: 520px;
+  font-size: 22px;
+  line-height: 1.35;
   color: #fff;
 }
 
 .landing-features {
+  display: grid;
+  gap: 12px;
   margin: 32px 0;
   padding: 0;
   list-style: none;
@@ -34,22 +55,29 @@
 
 .landing-features li {
   position: relative;
-  margin-bottom: 12px;
-  padding-left: 28px;
+  padding-left: 32px;
 }
 
 .landing-features li::before {
   content: '✓';
   position: absolute;
+  top: 0;
   left: 0;
-  font-weight: 600;
-  color: #fff;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6e3ff3;
+  background: #fff;
+  border-radius: 50%;
 }
 
 .landing-soon {
-  max-width: 560px;
+  max-width: 520px;
   padding-top: 24px;
-  font-size: 15px;
+  font-size: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.25);
 }
 
@@ -57,56 +85,69 @@
   display: grid;
   place-items: center;
   padding: 48px 24px;
+  background: var(--surface);
 }
 
 .landing-form {
   display: grid;
   gap: 16px;
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  box-sizing: border-box;
+  padding: 32px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
 }
 
 .landing-form h2 {
-  margin: 0 0 8px;
-  font-size: 32px;
+  font-size: 26px;
+}
+
+.landing-sub {
+  margin-top: -10px;
+  font-size: 14px;
 }
 
 .landing-form label {
   display: grid;
-  gap: 4px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text-h);
 }
 
 .landing-form input {
   box-sizing: border-box;
   width: 100%;
-  padding: 10px 12px;
-  font: inherit;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 400;
   color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: var(--input-bg);
+  border: 1px solid transparent;
+  border-radius: 12px;
 }
 
 .landing-form input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  border-color: var(--primary);
+  outline: none;
 }
 
 .landing-error {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--danger);
 }
 
 .landing-submit {
-  padding: 12px;
-  font: inherit;
-  font-weight: 500;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 600;
   color: #fff;
   background: var(--primary);
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
 }
 
@@ -116,9 +157,9 @@
 
 .landing-switch {
   padding: 4px;
-  font: inherit;
-  font-size: 15px;
-  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
   background: none;
   border: 0;
   cursor: pointer;
@@ -135,11 +176,15 @@
   }
 
   .landing-intro {
-    padding: 32px 16px;
+    padding: 28px 16px;
+  }
+
+  .landing-brand {
+    margin-bottom: 16px;
   }
 
   .landing-tagline {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .landing-features {
@@ -152,6 +197,10 @@
 
   .landing-panel {
     place-items: start center;
-    padding: 32px 16px;
+    padding: 24px 16px;
+  }
+
+  .landing-form {
+    padding: 24px 20px;
   }
 }

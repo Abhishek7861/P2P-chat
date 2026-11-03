@@ -3,47 +3,56 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  background: var(--surface);
+  background: var(--bg);
 }
+
+/* ---------- header ---------- */
 
 .chat-header {
   flex: none;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 12px 24px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
-.chat-header .person-text {
-  flex: 1;
-}
-
-.chat-back {
+/* Phones only; .chat-header raises specificity above the shared .icon-btn rule */
+.chat-header .chat-back {
   display: none;
-  padding: 6px 12px;
 }
 
-.chat-conn {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.chat-who {
+  flex: 1;
+  display: grid;
+  min-width: 0;
+  line-height: 1.3;
 }
 
-.chat-state {
-  font-size: 14px;
+.chat-who strong {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.chat-state {
+  font-size: 13px;
+}
+
+.chat-state.is-online,
 .chat-state-connected {
-  color: #22a559;
+  color: var(--online);
 }
 
 .chat-state-failed {
   color: var(--danger);
 }
+
+/* ---------- messages ---------- */
 
 .chat-messages {
   flex: 1;
@@ -51,103 +60,164 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 20px;
+  gap: 14px;
+  padding: 20px 24px;
+  /* a quiet pattern of rings behind the conversation */
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    circle at 20px 20px,
+    transparent 8px,
+    var(--pattern) 8.5px,
+    var(--pattern) 10px,
+    transparent 10.5px
+  );
+  background-size: 44px 44px;
 }
 
 .chat-empty {
-  margin: auto;
-  max-width: 420px;
-  font-size: 15px;
-  text-align: center;
-}
-
-.msg {
-  align-self: flex-start;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: min(75%, 560px);
-}
-
-.msg-me {
-  align-self: flex-end;
-  align-items: flex-end;
-}
-
-.msg-bubble {
-  padding: 8px 12px;
-  font-size: 16px;
-  line-height: 140%;
-  color: var(--text-h);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 14px 14px 14px 4px;
-}
-
-.msg-me .msg-bubble {
-  color: #fff;
-  background: var(--primary);
-  border-color: var(--primary);
-  border-radius: 14px 14px 4px 14px;
-}
-
-.msg-meta {
-  display: flex;
-  gap: 6px;
-  margin-top: 2px;
-  padding: 0 4px;
-  font-size: 12px;
-}
-
-.msg-delivered {
-  color: var(--accent);
-}
-
-.chat-composer {
-  flex: none;
-  display: flex;
+  display: grid;
+  justify-items: center;
   gap: 8px;
-  padding: 12px 20px;
+  max-width: 420px;
+  margin: auto;
+  padding: 24px;
+  font-size: 14px;
+  text-align: center;
   background: var(--bg);
+  border-radius: 16px;
+}
+
+.chat-empty h2 {
+  margin-top: 4px;
+  font-size: 18px;
+}
+
+.chat-item {
+  display: grid;
+  gap: 14px;
+}
+
+.day-sep {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.day-sep::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
   border-top: 1px solid var(--border);
 }
 
-.chat-composer .chat-attach {
-  display: grid;
-  place-items: center;
-  padding: 8px 10px;
+.day-sep span {
+  position: relative;
+  padding: 3px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--chip);
+  border-radius: 999px;
 }
 
-.chat-file-error {
-  flex: none;
-  margin: 0;
-  padding: 8px 20px 0;
-  background: var(--bg);
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: min(78%, 640px);
 }
+
+/* Each row sits in a .chat-item grid, so it's justify-self (not align-self) that pushes mine to the right edge */
+.row-me {
+  flex-direction: row-reverse;
+  justify-self: end;
+}
+
+.avatar-gap {
+  flex: none;
+  width: 36px;
+}
+
+.row-body {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.row-me .row-body {
+  justify-items: end;
+}
+
+.row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.row-meta strong {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.row-meta .sep {
+  width: 4px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 50%;
+}
+
+.tick {
+  display: inline-grid;
+  color: var(--text);
+}
+
+.tick-delivered {
+  color: var(--tick);
+}
+
+.bubble {
+  padding: 10px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-h);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--bubble-in);
+  border-radius: 14px;
+}
+
+.row-me .bubble {
+  color: #fff;
+  background: var(--primary);
+}
+
+/* ---------- file card ---------- */
 
 .file-card {
   display: grid;
   gap: 10px;
-  width: min(360px, 100%);
+  width: min(320px, 100%);
   box-sizing: border-box;
-  padding: 12px;
+  padding: 14px;
   color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: var(--bubble-in);
   border-radius: 14px;
 }
 
-.msg-me .file-card {
-  border-color: var(--primary);
+.file-out {
+  color: #fff;
+  background: var(--primary);
 }
 
 .file-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -155,39 +225,71 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  font-weight: 700;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  color: var(--primary);
+  background: var(--card);
+  border-radius: 50%;
+}
+
+.file-out .file-icon {
+  background: #fff;
 }
 
 .file-text {
+  flex: 1;
   display: grid;
   min-width: 0;
-  line-height: 135%;
+  line-height: 1.35;
 }
 
 .file-text strong {
   overflow: hidden;
-  font-weight: 500;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .file-text span {
   font-size: 13px;
-  color: var(--text);
+  opacity: 0.8;
 }
 
-.file-failed .file-text span,
-.file-rejected .file-text span {
+.file-save {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--primary);
+  background: var(--card);
+  border-radius: 8px;
+}
+
+.file-out .file-save {
+  background: #fff;
+}
+
+.file-status {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.file-done .file-status {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.file-failed .file-status,
+.file-rejected .file-status {
+  font-weight: 600;
   color: var(--danger);
+  opacity: 1;
 }
 
-.file-done .file-text span {
-  color: #22a559;
+.file-out.file-failed .file-status,
+.file-out.file-rejected .file-status {
+  color: #fff;
 }
 
 .file-progress {
@@ -196,11 +298,15 @@
   accent-color: var(--primary);
 }
 
+.file-out .file-progress {
+  accent-color: #fff;
+}
+
 .file-preview {
   max-width: 100%;
   max-height: 240px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .file-actions {
@@ -215,56 +321,122 @@
 
 .file-actions .btn {
   padding: 6px 12px;
-  font-size: 14px;
-  text-decoration: none;
+  font-size: 13px;
 }
 
-.chat-composer input {
+.file-out .file-actions .btn {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.file-out .file-actions .btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ---------- composer ---------- */
+
+.chat-file-error {
+  flex: none;
+  padding: 8px 24px 0;
+  background: var(--bg);
+}
+
+.composer {
+  flex: none;
+  padding: 12px 24px 16px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.composer-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 6px 6px 16px;
+  background: var(--input-bg);
+  border: 1px solid transparent;
+  border-radius: 14px;
+}
+
+.composer-box:focus-within {
+  border-color: var(--primary);
+}
+
+.composer-input {
   flex: 1;
   min-width: 0;
-  box-sizing: border-box;
-  padding: 10px 14px;
-  font: inherit;
-  font-size: 16px;
+  padding: 8px 0;
+  font-size: 15px;
   color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 20px;
+  background: none;
+  border: 0;
+  outline: none;
 }
 
-.chat-composer input:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+.composer-input::placeholder {
+  color: var(--text);
 }
 
-.chat-composer .btn {
-  border-radius: 20px;
+.send-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-left: 4px;
+  padding: 0;
+  color: #fff;
+  background: var(--primary);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
 }
+
+.send-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.send-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* ---------- phones ---------- */
 
 @media (max-width: 800px) {
-  .chat-back {
-    display: block;
+  .chat-header .chat-back {
+    display: grid;
   }
 
-  .chat-header,
-  .chat-messages,
-  .chat-composer {
-    padding-left: 16px;
-    padding-right: 16px;
+  .chat-header {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .chat-messages {
+    padding: 16px 12px;
+  }
+
+  .row {
+    max-width: 92%;
+  }
+
+  .composer {
+    padding: 10px 12px 12px;
+  }
+
+  .chat-file-error {
+    padding: 8px 12px 0;
   }
 }
 
 @media (max-width: 500px) {
-  .chat-header .person-text span {
+  .chat-header .btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .chat-header .btn svg {
     display: none;
-  }
-
-  .chat-header {
-    flex-wrap: wrap;
-  }
-
-  .chat-conn {
-    width: 100%;
-    justify-content: space-between;
   }
 }
