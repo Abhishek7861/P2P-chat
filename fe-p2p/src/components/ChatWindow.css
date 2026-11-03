@@ -43,6 +43,10 @@
   font-size: 13px;
 }
 
+.chat-call:not(:disabled) {
+  color: var(--primary);
+}
+
 .chat-state.is-online,
 .chat-state-connected {
   color: var(--online);

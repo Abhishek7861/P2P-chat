@@ -3,13 +3,16 @@ import { useAuth } from './hooks/useAuth';
 import { SignalingProvider, useSignaling } from './hooks/useSignaling';
 import { PeerProvider, usePeers } from './hooks/usePeers';
 import { useTheme } from './hooks/useTheme';
+import { CallProvider } from './hooks/useCall';
 import type { User } from './services/api';
 import Avatar from './components/Avatar';
 import Logo from './components/Logo';
-import { ChatIcon, LogoutIcon, MoonIcon, SunIcon } from './components/Icons';
+import { ChatIcon, LogoutIcon, MoonIcon, PhoneIcon, SunIcon } from './components/Icons';
 import ChatWindow from './components/ChatWindow';
+import CallPanel from './components/CallPanel';
 import LoginPage from './pages/LoginPage';
 import ContactsPage from './pages/ContactsPage';
+import CallsPage from './pages/CallsPage';
 import type { LastActivity } from './pages/ContactsPage';
 import './App.css';
 
@@ -19,8 +22,15 @@ function Home() {
   const { conversations, transfers } = usePeers();
   const { theme, toggle } = useTheme();
   const [active, setActive] = useState<User | null>(null);
+  const [view, setView] = useState<'chats' | 'calls'>('chats');
+  const [contacts, setContacts] = useState<User[]>([]);
   // How many of each contact's messages I've seen; the rest show as an unread badge
   const [seen, setSeen] = useState<Record<string, number>>({});
+
+  // Names for the call panel. A caller who isn't in my contacts still gets a placeholder.
+  const personOf = (id: string): User =>
+    contacts.find((c) => c.id === id) ??
+    (active?.id === id ? active : { id, username: 'unknown', displayName: 'Unknown caller' });
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -66,8 +76,29 @@ function Home() {
         <span className="rail-logo" title="PEER Messenger">
           <Logo />
         </span>
-        <button className="rail-btn is-active" aria-label="Chats" title="Chats" onClick={() => openChat(null)}>
+        <button
+          className={view === 'chats' ? 'rail-btn is-active' : 'rail-btn'}
+          aria-label="Chats"
+          aria-current={view === 'chats' ? 'page' : undefined}
+          title="Chats"
+          onClick={() => {
+            setView('chats');
+            openChat(null);
+          }}
+        >
           <ChatIcon size={22} />
+        </button>
+        <button
+          className={view === 'calls' ? 'rail-btn is-active' : 'rail-btn'}
+          aria-label="Calls"
+          aria-current={view === 'calls' ? 'page' : undefined}
+          title="Calls"
+          onClick={() => {
+            setView('calls');
+            openChat(null);
+          }}
+        >
+          <PhoneIcon size={22} />
         </button>
         <span className="rail-spacer" />
         <button
@@ -86,24 +117,31 @@ function Home() {
         </span>
       </nav>
 
-      <ContactsPage
-        online={online}
-        status={status}
-        onOpenChat={openChat}
-        activeId={active?.id}
-        unread={unread}
-        last={last}
-        notice={
-          status === 'replaced' && (
-            <div className="notice" role="alert">
-              <span>PEER Messenger is open in another tab, so this tab has stopped receiving updates.</span>
-              <button className="btn btn-primary" onClick={() => client.connect()}>
-                Use here
-              </button>
-            </div>
-          )
-        }
-      />
+      {view === 'calls' ? (
+        <CallsPage online={online} onOpenChat={openChat} />
+      ) : (
+        <ContactsPage
+          online={online}
+          status={status}
+          onOpenChat={openChat}
+          activeId={active?.id}
+          unread={unread}
+          last={last}
+          onContacts={setContacts}
+          notice={
+            status === 'replaced' && (
+              <div className="notice" role="alert">
+                <span>PEER Messenger is open in another tab, so this tab has stopped receiving updates.</span>
+                <button className="btn btn-primary" onClick={() => client.connect()}>
+                  Use here
+                </button>
+              </div>
+            )
+          }
+        />
+      )}
+
+      <CallPanel personOf={personOf} />
 
       {active ? (
         <ChatWindow key={active.id} peer={active} online={online.has(active.id)} onBack={() => openChat(null)} />
@@ -128,7 +166,9 @@ export default function App() {
   return (
     <SignalingProvider key={user.id}>
       <PeerProvider>
-        <Home />
+        <CallProvider>
+          <Home />
+        </CallProvider>
       </PeerProvider>
     </SignalingProvider>
   );

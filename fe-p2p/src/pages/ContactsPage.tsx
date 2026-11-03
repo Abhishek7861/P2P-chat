@@ -26,10 +26,21 @@ type Props = {
   unread?: Record<string, number>;
   last?: Record<string, LastActivity>;
   notice?: ReactNode;
+  /** Called with the contact list whenever it loads, so the app can show names for calls. */
+  onContacts?: (contacts: User[]) => void;
 };
 
 // The chat list: find people and add them, see who's online, and pick a contact to chat with.
-export default function ContactsPage({ onOpenChat, online, status, activeId, unread = {}, last = {}, notice }: Props) {
+export default function ContactsPage({
+  onOpenChat,
+  online,
+  status,
+  activeId,
+  unread = {},
+  last = {},
+  notice,
+  onContacts,
+}: Props) {
   const [contacts, setContacts] = useState<User[]>([]);
   const [q, setQ] = useState('');
   const [results, setResults] = useState<User[] | null>(null);
@@ -40,9 +51,12 @@ export default function ContactsPage({ onOpenChat, online, status, activeId, unr
   const load = useCallback(
     () =>
       api<User[]>('/contacts')
-        .then(setContacts)
+        .then((list) => {
+          setContacts(list);
+          onContacts?.(list);
+        })
         .catch((err: Error) => setError(err.message)),
-    [],
+    [onContacts],
   );
 
   useEffect(() => {

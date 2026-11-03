@@ -24,6 +24,10 @@ type FileActions = {
 
 const isActive = (s?: ConnState) => s === 'new' || s === 'connecting' || s === 'connected' || s === 'disconnected';
 
+// Low-level connection events for features built on top (calls): remote media arriving, and state changes
+export type PeerEvent = { type: 'track'; event: RTCTrackEvent } | { type: 'state'; state: RTCPeerConnectionState };
+type PeerListener = (peerId: string, e: PeerEvent) => void;
+
 type PeerCtx = {
   conversations: Record<string, ChatMessage[]>;
   states: Record<string, ConnState>;
@@ -34,6 +38,9 @@ type PeerCtx = {
   sendFile: (peerId: string, file: File) => Promise<void>;
   files: FileActions;
   hangUp: (peerId: string) => void;
+  /** Connects if needed and returns the peer connection, so media tracks can be added to it. */
+  pcFor: (peerId: string) => RTCPeerConnection | null;
+  onPeerEvent: (l: PeerListener) => () => void;
 };
 
 const Ctx = createContext<PeerCtx>(null!);
@@ -55,6 +62,7 @@ export function PeerProvider({ children }: { children: ReactNode }) {
   const files = useRef<FileTransfers | null>(null);
   const channels = useRef(new Map<string, RTCDataChannel>());
   const outbox = useRef(new Map<string, Frame[]>());
+  const peerListeners = useRef(new Set<PeerListener>());
 
   const addMsg = useCallback(
     (peerId: string, m: ChatMessage) => setConversations((c) => ({ ...c, [peerId]: [...(c[peerId] ?? []), m] })),
@@ -160,8 +168,10 @@ export function PeerProvider({ children }: { children: ReactNode }) {
             ft.peerGone(peerId);
           }
           setStates((x) => ({ ...x, [peerId]: s }));
+          peerListeners.current.forEach((l) => l(peerId, { type: 'state', state: s }));
         },
         onChannel: (ch) => attach(peerId, ch),
+        onTrack: (event) => peerListeners.current.forEach((l) => l(peerId, { type: 'track', event })),
       }),
     );
     manager.current = m;
@@ -213,9 +223,35 @@ export function PeerProvider({ children }: { children: ReactNode }) {
     setStates((x) => ({ ...x, [peerId]: 'idle' }));
   }, []);
 
+  const pcFor = useCallback(
+    (peerId: string) => {
+      connect(peerId);
+      return manager.current?.get(peerId).pc ?? null;
+    },
+    [connect],
+  );
+
+  const onPeerEvent = useCallback((l: PeerListener) => {
+    peerListeners.current.add(l);
+    return () => {
+      peerListeners.current.delete(l);
+    };
+  }, []);
+
   return (
     <Ctx.Provider
-      value={{ conversations, states, transfers, connect, sendText, sendFile, files: fileActions, hangUp }}
+      value={{
+        conversations,
+        states,
+        transfers,
+        connect,
+        sendText,
+        sendFile,
+        files: fileActions,
+        hangUp,
+        pcFor,
+        onPeerEvent,
+      }}
     >
       {children}
     </Ctx.Provider>

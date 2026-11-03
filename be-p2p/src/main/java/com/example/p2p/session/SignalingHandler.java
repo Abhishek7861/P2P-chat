@@ -29,6 +29,7 @@ public class SignalingHandler extends TextWebSocketHandler {
     private final ContactRepository contacts;
     private final ObjectMapper json;
     private final JdbcTemplate jdbc;
+    private final CallSessionService calls;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession raw) throws IOException {
@@ -74,15 +75,24 @@ public class SignalingHandler extends TextWebSocketHandler {
         }
 
         registry.get(to).ifPresentOrElse(
-                target -> send(target, Map.of("type", "signal", "from", me.id(), "payload", payload)),
-                () -> send(from, Map.of("type", "error", "code", "peer-offline", "to", to)));
+                target -> {
+                    send(target, Map.of("type", "signal", "from", me.id(), "payload", payload));
+                    calls.track(me.id(), to, payload, true);
+                },
+                () -> {
+                    send(from, Map.of("type", "error", "code", "peer-offline", "to", to));
+                    calls.track(me.id(), to, payload, false); // a call to someone offline is logged as missed
+                });
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession raw, CloseStatus status) {
         AuthUser me = user(raw);
         jdbc.update("UPDATE connections SET disconnected_at = now() WHERE session_id = ?", raw.getId());
-        if (registry.unregister(me.id(), safe(raw))) broadcastPresence(me.id(), false);
+        if (registry.unregister(me.id(), safe(raw))) {
+            broadcastPresence(me.id(), false);
+            calls.endOpenCalls(me.id());
+        }
     }
 
     private void broadcastPresence(UUID userId, boolean online) {

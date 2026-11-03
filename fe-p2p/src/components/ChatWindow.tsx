@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useCall } from '../hooks/useCall';
 import { usePeers } from '../hooks/usePeers';
 import type { ConnState } from '../hooks/usePeers';
 import { MAX_TEXT } from '../webrtc/chatProtocol';
@@ -10,7 +11,7 @@ import type { User } from '../services/api';
 import { clock, dayLabel, sameDay } from '../utils/time';
 import Avatar from './Avatar';
 import TransferCard from './TransferCard';
-import { BackIcon, CheckDoubleIcon, CheckIcon, ClockIcon, FolderIcon, LinkIcon, SendIcon } from './Icons';
+import { BackIcon, CheckDoubleIcon, CheckIcon, ClockIcon, FolderIcon, LinkIcon, PhoneIcon, SendIcon } from './Icons';
 import './ChatWindow.css';
 
 type Item = { kind: 'msg'; at: number; m: ChatMessage } | { kind: 'file'; at: number; t: Transfer };
@@ -56,6 +57,7 @@ type Props = { peer: User; online: boolean; onBack: () => void };
 export default function ChatWindow({ peer, online, onBack }: Props) {
   const { user } = useAuth();
   const { conversations, states, transfers, connect, sendText, sendFile, hangUp } = usePeers();
+  const { call, startCall } = useCall();
   const [draft, setDraft] = useState('');
   const [fileError, setFileError] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
@@ -103,6 +105,15 @@ export default function ChatWindow({ peer, online, onBack }: Props) {
           <strong>{peer.displayName}</strong>
           <span className={`chat-state chat-state-${state}${online ? ' is-online' : ''}`}>{statusLine}</span>
         </div>
+        <button
+          className="icon-btn chat-call"
+          aria-label={`Call ${peer.displayName}`}
+          title={!online ? `${peer.displayName} is offline` : call ? "You're already in a call" : 'Audio call'}
+          disabled={!online || !!call}
+          onClick={() => startCall(peer.id, 'audio')}
+        >
+          <PhoneIcon />
+        </button>
         {state === 'connected' ? (
           <button className="btn" onClick={() => hangUp(peer.id)}>
             Disconnect

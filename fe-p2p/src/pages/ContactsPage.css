@@ -274,6 +274,47 @@
   border-radius: 6px;
 }
 
+/* Call history rows: the card opens the chat, the phone button calls back */
+.call-card {
+  padding: 0 8px 0 0;
+}
+
+.call-open {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+/* Name and time share the first line, so the call description gets the full width below */
+.call-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.call-top .chat-time {
+  flex: none;
+}
+
+.call-bad {
+  color: var(--danger);
+}
+
+.call-back {
+  color: var(--primary);
+}
+
 @media (max-width: 800px) {
   .sidebar {
     border-right: 0;

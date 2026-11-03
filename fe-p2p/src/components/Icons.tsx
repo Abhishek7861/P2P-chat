@@ -114,6 +114,45 @@ export const CheckDoubleIcon = ({ size = 16 }: P) => (
   </Svg>
 );
 
+export const PhoneIcon = ({ size }: P) => (
+  <Svg size={size}>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
+  </Svg>
+);
+
+export const HangUpIcon = ({ size }: P) => (
+  <Svg size={size}>
+    <path d="M3 14.5c5-5 13-5 18 0l-2.5 2.5-3.5-1.5v-3a12 12 0 0 0-6 0v3L5.5 17z" />
+  </Svg>
+);
+
+export const MicIcon = ({ size }: P) => (
+  <Svg size={size}>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+  </Svg>
+);
+
+export const MicOffIcon = ({ size }: P) => (
+  <Svg size={size}>
+    <path d="M3 3l18 18" />
+    <path d="M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V6a3 3 0 0 0-5.7-1.3" />
+    <path d="M5 11a7 7 0 0 0 11.5 5.4M19 11a7 7 0 0 1-.6 2.9M12 18v3" />
+  </Svg>
+);
+
+export const OutgoingIcon = ({ size = 16 }: P) => (
+  <Svg size={size}>
+    <path d="M7 17 17 7M9 7h8v8" />
+  </Svg>
+);
+
+export const IncomingIcon = ({ size = 16 }: P) => (
+  <Svg size={size}>
+    <path d="M17 7 7 17M15 17H7V9" />
+  </Svg>
+);
+
 export const ClockIcon = ({ size = 14 }: P) => (
   <Svg size={size}>
     <circle cx="12" cy="12" r="8" />
